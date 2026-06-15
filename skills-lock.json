@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "nft-developer-skill": {
+      "source": "kofujimura/nft-developer-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "a6e395bd80fd436b80bda11a9578b2983d17ed9c11b3a91c98858346aac5be05"
+    }
+  }
+}
