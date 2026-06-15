@@ -27,22 +27,31 @@ async function main() {
   const [owner] = await hre.ethers.getSigners();
   console.log("Minting as:", owner.address);
 
+  // Set gas fees to 2x current baseFee + 2gwei priority to prevent stuck transactions
+  const block = await hre.ethers.provider.getBlock("latest");
+  const feeData = await hre.ethers.provider.getFeeData();
+  const baseFee = block.baseFeePerGas ?? feeData.gasPrice;
+  const maxFeePerGas = baseFee * 2n + hre.ethers.parseUnits("2", "gwei");
+  const maxPriorityFeePerGas = hre.ethers.parseUnits("2", "gwei");
+  const gasOverrides = { maxFeePerGas, maxPriorityFeePerGas };
+  console.log("maxFeePerGas:", hre.ethers.formatUnits(maxFeePerGas, "gwei"), "gwei");
+
   if (TOKEN_STANDARD === "721") {
     if (!MINT_TOKEN_URI) { console.error("Set MINT_TOKEN_URI for ERC721"); process.exit(1); }
     const contract = await hre.ethers.getContractAt("ERC721Base", CONTRACT_ADDRESS);
-    const tx = await contract.mint(MINT_TO, MINT_TOKEN_URI);
+    const tx = await contract.mint(MINT_TO, MINT_TOKEN_URI, gasOverrides);
+    console.log(`TX: https://sepolia.etherscan.io/tx/${tx.hash}`);
     const receipt = await tx.wait();
     const event = receipt.logs.find(l => l.fragment?.name === "Transfer");
     const tokenId = event?.args?.[2]?.toString() ?? "?";
     console.log(`Minted ERC721 token ID ${tokenId} → ${MINT_TO}`);
-    console.log(`TX: https://sepolia.etherscan.io/tx/${tx.hash}`);
   } else {
     if (!MINT_TOKEN_ID) { console.error("Set MINT_TOKEN_ID for ERC1155"); process.exit(1); }
     const contract = await hre.ethers.getContractAt("ERC1155Base", CONTRACT_ADDRESS);
-    const tx = await contract.mint(MINT_TO, MINT_TOKEN_ID, MINT_AMOUNT);
+    const tx = await contract.mint(MINT_TO, MINT_TOKEN_ID, MINT_AMOUNT, gasOverrides);
+    console.log(`TX: https://sepolia.etherscan.io/tx/${tx.hash}`);
     await tx.wait();
     console.log(`Minted ERC1155 token ID ${MINT_TOKEN_ID} x${MINT_AMOUNT} → ${MINT_TO}`);
-    console.log(`TX: https://sepolia.etherscan.io/tx/${tx.hash}`);
   }
 }
 
